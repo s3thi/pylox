@@ -1,6 +1,7 @@
 from lox_token_type import LoxTokenType
 from lox_token import LoxToken
 
+
 class LoxScanner:
     def __init__(self, source):
         self.source = source
@@ -18,7 +19,7 @@ class LoxScanner:
         self.start = 0
         self.current = 0
         self.line = 1
-    
+
     def scan_tokens(self):
         while not self.is_at_end():
             self.start = self.current
@@ -85,7 +86,8 @@ class LoxScanner:
             self.line = self.line + 1
         else:
             from lox import Lox
-            Lox.error(self.line, f"Unexpected character \"{c}\".")
+
+            Lox.error(self.line, f'Unexpected character "{c}".')
 
     def match(self, expected):
         if self.is_at_end():
@@ -108,6 +110,6 @@ class LoxScanner:
         return self.source[self.current - 1]
 
     def add_token(self, ttype, literal=None):
-        text = self.source[self.start:self.current]
+        text = self.source[self.start : self.current]
         token = LoxToken(ttype, text, literal, self.line)
         self.tokens.append(token)

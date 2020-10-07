@@ -1,10 +1,9 @@
 import sys
-
 from lox_scanner import LoxScanner
 
 
 class Lox:
-    @classmethod    
+    @classmethod
     def main(cls):
         cls.had_error = False
         if len(sys.argv) > 2:

@@ -1,5 +1,6 @@
 from enum import Enum, auto
 
+
 class LoxTokenType(Enum):
     # Single-character tokens.
     LEFT_PAREN = auto()
@@ -13,7 +14,7 @@ class LoxTokenType(Enum):
     SEMICOLON = auto()
     SLASH = auto()
     STAR = auto()
-    
+
     # One or two character tokens.
     BANG = auto()
     BANG_EQUAL = auto()
@@ -23,12 +24,12 @@ class LoxTokenType(Enum):
     GREATER_EQUAL = auto()
     LESS = auto()
     LESS_EQUAL = auto()
-    
+
     # Literals.
     IDENTIFIER = auto()
     STRING = auto()
     NUMBER = auto()
-    
+
     # Keywords.
     AND = auto()
     CLASS = auto()

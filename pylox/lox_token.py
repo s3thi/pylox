@@ -17,4 +17,3 @@ class LoxToken:
         s = s + ">"
         return s
 
-        # return f"Token<type: {self.ttype}, lexeme:{self.lexeme} literal:{self.literal}>"
