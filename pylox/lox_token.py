@@ -1,4 +1,4 @@
-class Token:
+class LoxToken:
     def __init__(self, ttype, lexeme, literal, line):
         self.ttype = ttype
         self.lexeme = lexeme

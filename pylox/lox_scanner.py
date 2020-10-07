@@ -1,7 +1,7 @@
-from token_type import TokenType
-from token import Token
+from lox_token_type import LoxTokenType
+from lox_token import LoxToken
 
-class Scanner:
+class LoxScanner:
     def __init__(self, source):
         self.source = source
         self.tokens = []
@@ -24,7 +24,7 @@ class Scanner:
             self.start = self.current
             self.scan_token()
 
-        self.tokens.append(Token(TokenType.EOF, "", None, self.line))
+        self.tokens.append(LoxToken(LoxTokenType.EOF, "", None, self.line))
         return self.tokens
 
     def is_at_end(self):
@@ -34,51 +34,51 @@ class Scanner:
         c = self.advance()
 
         if c == "(":
-            self.add_token(TokenType.LEFT_PAREN)
+            self.add_token(LoxTokenType.LEFT_PAREN)
         elif c == ")":
-            self.add_token(TokenType.RIGHT_PAREN)
+            self.add_token(LoxTokenType.RIGHT_PAREN)
         elif c == "{":
-            self.add_token(TokenType.LEFT_BRACE)
+            self.add_token(LoxTokenType.LEFT_BRACE)
         elif c == "}":
-            self.add_token(TokenType.RIGHT_BRACE)
+            self.add_token(LoxTokenType.RIGHT_BRACE)
         elif c == ",":
-            self.add_token(TokenType.COMMA)
+            self.add_token(LoxTokenType.COMMA)
         elif c == ".":
-            self.add_token(TokenType.DOT)
+            self.add_token(LoxTokenType.DOT)
         elif c == "-":
-            self.add_token(TokenType.MINUS)
+            self.add_token(LoxTokenType.MINUS)
         elif c == "+":
-            self.add_token(TokenType.PLUS)
+            self.add_token(LoxTokenType.PLUS)
         elif c == ";":
-            self.add_token(TokenType.SEMICOLON)
+            self.add_token(LoxTokenType.SEMICOLON)
         elif c == "*":
-            self.add_token(TokenType.STAR)
+            self.add_token(LoxTokenType.STAR)
         elif c == "!":
             if self.match("="):
-                self.add_token(TokenType.BANG_EQUAL)
+                self.add_token(LoxTokenType.BANG_EQUAL)
             else:
-                self.add_token(TokenType.BANG)
+                self.add_token(LoxTokenType.BANG)
         elif c == "=":
             if self.match("="):
-                self.add_token(TokenType.EQUAL_EQUAL)
+                self.add_token(LoxTokenType.EQUAL_EQUAL)
             else:
-                self.add_token(TokenType.EQUAL)
+                self.add_token(LoxTokenType.EQUAL)
         elif c == "<":
             if self.match("="):
-                self.add_token(TokenType.LESS_EQUAL)
+                self.add_token(LoxTokenType.LESS_EQUAL)
             else:
-                self.add_token(TokenType.LESS)
+                self.add_token(LoxTokenType.LESS)
         elif c == ">":
             if self.match("="):
-                self.add_token(TokenType.GREATER_EQUAL)
+                self.add_token(LoxTokenType.GREATER_EQUAL)
             else:
-                self.add_token(TokenType.GREATER)
+                self.add_token(LoxTokenType.GREATER)
         elif c == "/":
             if self.match("/"):
                 while self.peek() != "\n" and not self.is_at_end():
                     self.advance()
             else:
-                self.add_token(TokenType.SLASH)
+                self.add_token(LoxTokenType.SLASH)
         elif c == " " or c == "\r" or c == "\t":
             pass
         elif c == "\n":
@@ -109,5 +109,5 @@ class Scanner:
 
     def add_token(self, ttype, literal=None):
         text = self.source[self.start:self.current]
-        token = Token(ttype, text, literal, self.line)
+        token = LoxToken(ttype, text, literal, self.line)
         self.tokens.append(token)

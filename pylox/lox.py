@@ -1,6 +1,6 @@
 import sys
 
-from scanner import Scanner
+from lox_scanner import LoxScanner
 
 
 class Lox:
@@ -38,7 +38,7 @@ class Lox:
 
     @classmethod
     def run(cls, source):
-        s = Scanner(source)
+        s = LoxScanner(source)
         tokens = s.scan_tokens()
 
         for token in tokens:
