@@ -4,52 +4,55 @@ from scanner import Scanner
 
 
 class Lox:
-    def __init__(self):
-        self.had_error = False
-    
-    def main(self):
+    @classmethod    
+    def main(cls):
+        cls.had_error = False
         if len(sys.argv) > 2:
             print("Usage: pylox [script]")
             sys.exit(64)
         elif len(sys.argv) == 2:
-            self.run_file(sys.argv[1])
+            cls.run_file(sys.argv[1])
         else:
-            self.run_prompt()
+            cls.run_prompt()
 
-    def run_file(self, filename):
+    @classmethod
+    def run_file(cls, filename):
         with open(filename) as f:
-            self.run(f.read())
+            cls.run(f.read())
 
-        if self.had_error:
+        if cls.had_error:
             sys.exit(65)
 
-    def run_prompt(self):
+    @classmethod
+    def run_prompt(cls):
         import readline
 
         while True:
             try:
                 line = input("lox>> ")
-                self.run(line)
-                self.had_error = False
+                cls.run(line)
+                cls.had_error = False
             except EOFError:
                 print("\nGoodbye!")
                 sys.exit(0)
 
-    def run(self, source):
+    @classmethod
+    def run(cls, source):
         s = Scanner(source)
         tokens = s.scan_tokens()
 
         for token in tokens:
             print(token)
 
-    def error(self, line, message):
-        self.report(line, "", message)
+    @classmethod
+    def error(cls, line, message):
+        cls.report(line, "", message)
 
-    def report(self, line, where, message):
+    @classmethod
+    def report(cls, line, where, message):
         print(f"[line {line}] Error {where}: {message}")
-        self.had_error = True
+        cls.had_error = True
 
 
 if __name__ == "__main__":
-    lox = Lox()
-    lox.main()
+    Lox.main()

@@ -6,4 +6,15 @@ class Token:
         self.line = line
 
     def __str__(self):
-        return f"{type} {lexeme} {literal}"
+        s = f"<{self.ttype.name}"
+
+        if len(self.lexeme) > 0:
+            s = s + f", {self.lexeme}"
+
+        if self.literal is not None:
+            s = s + f", {self.literal}"
+
+        s = s + ">"
+        return s
+
+        # return f"Token<type: {self.ttype}, lexeme:{self.lexeme} literal:{self.literal}>"
