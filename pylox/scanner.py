@@ -3,4 +3,4 @@ class Scanner:
         pass
     
     def scan_tokens(self):
-        return ["token"]
+        return ["TestToken"]
