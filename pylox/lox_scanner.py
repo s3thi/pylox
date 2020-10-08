@@ -1,5 +1,9 @@
+import re
 from lox_token_type import LoxTokenType
 from lox_token import LoxToken
+
+
+IS_DIGIT_REGEX = re.compile("[0-9]")
 
 
 class LoxScanner:
@@ -80,14 +84,54 @@ class LoxScanner:
                     self.advance()
             else:
                 self.add_token(LoxTokenType.SLASH)
+        elif c == '"':
+            self.string()
         elif c == " " or c == "\r" or c == "\t":
             pass
         elif c == "\n":
             self.line = self.line + 1
         else:
+            if self.is_digit(c):
+                self.number()
+            else:
+                from lox import Lox
+
+                Lox.error(self.line, f'Unexpected character "{c}".')
+
+    def string(self):
+        while self.peek() != '"' and not self.is_at_end():
+            if self.peek() == "\n":
+                self.line = self.line + 1
+            self.advance()
+
+        if self.is_at_end():
             from lox import Lox
 
-            Lox.error(self.line, f'Unexpected character "{c}".')
+            Lox.error(self.line, "Unterminated string.")
+            return
+
+        # Consume the closing quote.
+        self.advance()
+
+        value = self.source[self.start + 1 : self.current - 1]
+        self.add_token(LoxTokenType.STRING, value)
+
+    def number(self):
+        while self.is_digit(self.peek()):
+            self.advance()
+
+        if self.peek() == "." and self.is_digit(self.peek_next()):
+            self.advance()
+
+        while self.is_digit(self.peek()):
+            self.advance()
+
+        self.add_token(
+            LoxTokenType.NUMBER, float(self.source[self.start : self.current])
+        )
+
+    def is_digit(self, c):
+        return re.match(IS_DIGIT_REGEX, c) is not None
 
     def match(self, expected):
         if self.is_at_end():
@@ -104,6 +148,12 @@ class LoxScanner:
             return "\0"
 
         return self.source[self.current]
+
+    def peek_next(self):
+        if self.current + 1 >= len(self.source):
+            return "\0"
+
+        return self.source[self.current + 1]
 
     def advance(self):
         self.current = self.current + 1
