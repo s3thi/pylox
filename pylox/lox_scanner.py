@@ -1,9 +1,7 @@
 import re
 from lox_token_type import LoxTokenType
 from lox_token import LoxToken
-
-
-IS_DIGIT_REGEX = re.compile("[0-9]")
+from lox_keywords import LOX_KEYWORDS
 
 
 class LoxScanner:
@@ -93,6 +91,8 @@ class LoxScanner:
         else:
             if self.is_digit(c):
                 self.number()
+            elif self.is_alphabetic(c):
+                self.identifier()
             else:
                 from lox import Lox
 
@@ -130,8 +130,16 @@ class LoxScanner:
             LoxTokenType.NUMBER, float(self.source[self.start : self.current])
         )
 
-    def is_digit(self, c):
-        return re.match(IS_DIGIT_REGEX, c) is not None
+    def identifier(self):
+        while self.is_alphanumeric(self.peek()):
+            self.advance()
+
+        text = self.source[self.start : self.current]
+        ttype = LOX_KEYWORDS.get(text)
+        if ttype is None:
+            ttype = LoxTokenType.IDENTIFIER
+
+        self.add_token(ttype)
 
     def match(self, expected):
         if self.is_at_end():
@@ -142,6 +150,15 @@ class LoxScanner:
 
         self.current = self.current + 1
         return True
+
+    def is_digit(self, c):
+        return c.isdigit() and c.isascii()
+
+    def is_alphabetic(self, c):
+        return c.isalpha() or c == "_"
+
+    def is_alphanumeric(self, c):
+        return self.is_alphabetic(c) or self.is_digit(c)
 
     def peek(self):
         if self.is_at_end():
