@@ -1,3 +1,6 @@
+import re
+
+
 def define_ast(base_class_name, productions):
     base_class = type(base_class_name, (object,), {})
     globals()[base_class_name] = base_class
@@ -25,7 +28,10 @@ def make_production_class(production_class_name, base_class, field_names):
             setattr(self, f, kwargs[f])
 
     def accept(self, visitor):
-        getattr(visitor, f"visit{production_class_name}")(self)
+        method_name = re.sub(
+            r"([A-Z]+)", r"_\1", f"visit{production_class_name}"
+        ).lower()
+        return getattr(visitor, method_name)(self)
 
     production_class = type(
         production_class_name, (base_class,), {"__init__": __init__, "accept": accept}
