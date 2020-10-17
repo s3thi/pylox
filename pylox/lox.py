@@ -2,13 +2,17 @@ import sys
 from lox_scanner import LoxScanner
 from lox_parser import LoxParser
 from lox_token_type import LoxTokenType
+from interpreter import Interpreter
 from ast_printer import ASTPrinter
 
 
 class Lox:
     @classmethod
     def main(cls):
+        cls.interpreter = Interpreter()
         cls.had_error = False
+        cls.had_runtime_error = False
+
         if len(sys.argv) > 2:
             print("Usage: pylox [script]")
             sys.exit(64)
@@ -24,6 +28,9 @@ class Lox:
 
         if cls.had_error:
             sys.exit(65)
+
+        if cls.had_runtime_error:
+            sys.exit(70)
 
     @classmethod
     def run_prompt(cls):
@@ -48,7 +55,7 @@ class Lox:
         if cls.had_error:
             return
 
-        print(ASTPrinter().print(expression))
+        cls.interpreter.interpret(expression)
 
     @classmethod
     def error(cls, line, message):
@@ -60,6 +67,11 @@ class Lox:
             cls.report(token.line, " at end", message)
         else:
             cls.report(token.line, " at '" + token.lexeme + "'", message)
+
+    @classmethod
+    def runtime_error(cls, error):
+        print(f"{error.message}\n[line {error.token.line}]")
+        cls.had_runtime_error = True
 
     @classmethod
     def report(cls, line, where, message):
