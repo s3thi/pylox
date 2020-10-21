@@ -43,9 +43,24 @@ def make_production_class(production_class_name, base_class, field_names):
 define_ast(
     "Expr",
     [
+        "Assign   : Token name, Expr value",
         "Binary   : Expr left, Token operator, Expr right",
         "Grouping : Expr expression",
         "Literal  : Object value",
+        "Logical  : Expr left, Token operator, Expr right",
         "Unary    : Token operator, Expr right",
+        "Variable : Token name",
+    ],
+)
+
+define_ast(
+    "Stmt",
+    [
+        "Block      : List<Stmt> statements",
+        "Expression : Expr expression",
+        "If         : Expr condition, Stmt then_branch, Stmt else_branch",
+        "Print      : Expr expression",
+        "Var        : Token name, Expr initializer",
+        "While      : Expr condition, Stmt body",
     ],
 )

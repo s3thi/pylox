@@ -1,12 +1,16 @@
 from lox_token_type import LoxTokenType
 from lox_runtime_error import LoxRuntimeError
+from environment import Environment
 
 
 class Interpreter:
-    def interpret(self, expr):
+    def __init__(self):
+        self.environment = Environment()
+
+    def interpret(self, statements):
         try:
-            value = self.evaluate(expr)
-            print(self.stringify(value))
+            for statement in statements:
+                self.execute(statement)
         except LoxRuntimeError as error:
             from lox import Lox
 
@@ -15,8 +19,72 @@ class Interpreter:
     def evaluate(self, expr):
         return expr.accept(self)
 
+    def execute(self, stmt):
+        stmt.accept(self)
+
+    def execute_block(self, statements, environment):
+        previous = self.environment
+        try:
+            self.environment = environment
+            for stmt in statements:
+                self.execute(stmt)
+        finally:
+            self.environment = previous
+
+    def visit_block_stmt(self, stmt):
+        self.execute_block(stmt.statements, Environment(self.environment))
+        return None
+
+    def visit_expression_stmt(self, stmt):
+        self.evaluate(stmt.expression)
+        return None
+
+    def visit_if_stmt(self, stmt):
+        if self.is_truthy(self.evaluate(stmt.expression)):
+            self.execute(stmt.then_branch)
+        elif stmt.else_branch is not None:
+            self.execute(stmt.else_branch)
+
+        return None
+
+    def visit_print_stmt(self, stmt):
+        value = self.evaluate(stmt.expression)
+        print(self.stringify(value))
+        return None
+
+    def visit_var_stmt(self, stmt):
+        value = None
+        if stmt.initializer is not None:
+            value = self.evaluate(stmt.initializer)
+
+        self.environment.define(stmt.name.lexeme, value)
+        return None
+
+    def visit_while_stmt(self, stmt):
+        while self.is_truthy(self.evaluate(stmt.condition)):
+            self.execute(stmt.body)
+
+        return None
+
+    def visit_assign_expr(self, expr):
+        value = self.evaluate(expr.value)
+        self.environment.assign(expr.name, value)
+        return value
+
     def visit_literal_expr(self, expr):
         return expr.value
+
+    def visit_logical_expr(self, expr):
+        left = self.evaluate(expr.left)
+
+        if expr.operator.ttype == LoxTokenType.OR:
+            if self.is_truthy(left):
+                return left
+        else:
+            if not self.is_truthy(left):
+                return left
+
+        return self.evaluate(expr.right)
 
     def visit_grouping_expr(self, expr):
         return self.evaluate(expr.expression)
@@ -31,6 +99,9 @@ class Interpreter:
             return not self.is_truthy(right)
 
         return None
+
+    def visit_variable_expr(self, expr):
+        return self.environment.get(expr.name)
 
     def visit_binary_expr(self, expr):
         left = self.evaluate(expr.left)

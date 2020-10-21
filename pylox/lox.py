@@ -50,12 +50,12 @@ class Lox:
         s = LoxScanner(source)
         tokens = s.scan_tokens()
         parser = LoxParser(tokens)
-        expression = parser.parse()
+        statements = parser.parse()
 
         if cls.had_error:
             return
 
-        cls.interpreter.interpret(expression)
+        cls.interpreter.interpret(statements)
 
     @classmethod
     def error(cls, line, message):

@@ -1,0 +1,5 @@
+print "Hello world!";
+print 1 + 2 + 11;
+print true;
+print nil;
+print "Hello" + " " + "expression!";

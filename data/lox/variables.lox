@@ -1,0 +1,8 @@
+var a = "Hello, world!";
+print a;
+
+var b = 19 + 18/2 - 7;
+print b;
+
+var c = "variables";
+print "These are " + c;

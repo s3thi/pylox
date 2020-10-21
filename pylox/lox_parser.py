@@ -1,5 +1,20 @@
 from lox_token_type import LoxTokenType
-from lox_expr import BinaryExpr, UnaryExpr, GroupingExpr, LiteralExpr
+from lox_runtime_error import LoxRuntimeError
+from lox_ast import (
+    AssignExpr,
+    BinaryExpr,
+    UnaryExpr,
+    GroupingExpr,
+    LiteralExpr,
+    LogicalExpr,
+    VariableExpr,
+    BlockStmt,
+    IfStmt,
+    PrintStmt,
+    ExpressionStmt,
+    VarStmt,
+    WhileStmt,
+)
 
 
 class LoxParser:
@@ -8,13 +23,161 @@ class LoxParser:
         self.current = 0
 
     def parse(self):
+        statements = []
+        while not self.is_at_end():
+            statements.append(self.declaration())
+
+        return statements
+
+    def declaration(self):
         try:
-            return self.expression()
-        except SyntaxError:
+            if self.match(LoxTokenType.VAR):
+                return self.var_declaration()
+
+            return self.statement()
+        except LoxRuntimeError as error:
+            self.synchronize()
             return None
 
+    def statement(self):
+        if self.match(LoxTokenType.FOR):
+            return self.for_statement()
+        elif self.match(LoxTokenType.IF):
+            return self.if_statement()
+        elif self.match(LoxTokenType.PRINT):
+            return self.print_statement()
+        elif self.match(LoxTokenType.WHILE):
+            return self.while_statement()
+        elif self.match(LoxTokenType.LEFT_BRACE):
+            return BlockStmt(statements=self.block_statement())
+
+        return self.expression_statement()
+
+    def for_statement(self):
+        self.consume(LoxTokenType.LEFT_PAREN, "Expect '(' after 'for'.")
+
+        if self.match(LoxTokenType.SEMICOLON):
+            initializer = None
+        elif self.match(LoxTokenType.VAR):
+            initializer = self.var_declaration()
+        else:
+            initializer = self.expression_statement()
+
+        condition = None
+        if not self.check(LoxTokenType.SEMICOLON):
+            condition = self.expression()
+
+        self.consume(LoxTokenType.SEMICOLON, "Expect ';' after loop condition.")
+
+        increment = None
+        if not self.check(LoxTokenType.RIGHT_PAREN):
+            increment = self.expression()
+
+        self.consume(LoxTokenType.RIGHT_PAREN, "Expect ')' after for clauses.")
+
+        body = self.statement()
+
+        if increment is not None:
+            body = BlockStmt(statements=[body, ExpressionStmt(expression=increment)])
+
+        if condition is None:
+            condition = LiteralExpr(value=True)
+
+        body = WhileStmt(condition=condition, body=body)
+
+        if initializer is not None:
+            body = BlockStmt(statements=[initializer, body])
+
+        return body
+
+    def if_statement(self):
+        self.consume(LoxTokenType.LEFT_PAREN, "Expect '(' after 'if'.")
+        condition = self.expression()
+        self.consume(LoxTokenType.RIGHT_PAREN, "Expect ')' after if condition.")
+
+        then_branch = self.statement()
+        else_branch = None
+
+        if self.match(LoxTokenType.ELSE):
+            else_branch = self.statement()
+
+        return IfStmt(
+            condition=condition, then_branch=then_branch, else_branch=else_branch
+        )
+
+    def print_statement(self):
+        value = self.expression()
+        self.consume(LoxTokenType.SEMICOLON, "Expect ';' after value.")
+        return PrintStmt(expression=value)
+
+    def var_declaration(self):
+        name = self.consume(LoxTokenType.IDENTIFIER, "Expect variable name.")
+
+        initializer = None
+        if self.match(LoxTokenType.EQUAL):
+            initializer = self.expression()
+
+        self.consume(LoxTokenType.SEMICOLON, "Expect ';' after variable declaration.")
+        return VarStmt(name=name, initializer=initializer)
+
+    def while_statement(self):
+        self.consume(LoxTokenType.LEFT_PAREN, "Expect '(' after 'while'.")
+        condition = self.expression()
+        self.consume(LoxTokenType.RIGHT_PAREN, "Expect ')' after condition.")
+        body = self.statement()
+
+        return WhileStmt(condition=condition, body=body)
+
+    def expression_statement(self):
+        expr = self.expression()
+        self.consume(LoxTokenType.SEMICOLON, "Expect ';' after expression.")
+        return ExpressionStmt(expression=expr)
+
+    def block_statement(self):
+        statements = []
+        while not self.check(LoxTokenType.RIGHT_BRACE) and not self.is_at_end():
+            statements.append(self.declaration())
+
+        self.consume(LoxTokenType.RIGHT_BRACE, "Expect '}' after block.")
+        return statements
+
     def expression(self):
-        return self.equality()
+        return self.assignment()
+
+    def assignment(self):
+        expr = self.or_()
+
+        if self.match(LoxTokenType.EQUAL):
+            equals = self.previous()
+            value = self.assignment()
+
+            if isinstance(expr, VariableExpr):
+                name = expr.name
+                return AssignExpr(name=name, value=value)
+
+            self.error(equals, "Invalid assignment target.")
+
+        return expr
+
+    def or_(self):
+        expr = self.and_()
+
+        while self.match(LoxTokenType.OR):
+            operator = self.previous()
+            right = self.and_()
+            expr = LogicalExpr(left=expr, operator=operator, right=right)
+
+        return expr
+
+    def and_(self):
+        expr = self.equality()
+
+        while self.match(LoxTokenType.AND):
+            operator = self.previous()
+            right = self.equality()
+            expr = LogicalExpr(left=expr, operator=operator, right=right)
+
+        return expr
 
     def equality(self):
         expr = self.comparison()
@@ -81,6 +244,9 @@ class LoxParser:
 
         if self.match(LoxTokenType.NUMBER, LoxTokenType.STRING):
             return LiteralExpr(value=self.previous().literal)
+
+        if self.match(LoxTokenType.IDENTIFIER):
+            return VariableExpr(name=self.previous())
 
         if self.match(LoxTokenType.LEFT_PAREN):
             expr = self.expression()
