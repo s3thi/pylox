@@ -1,11 +1,28 @@
+from time import time_ns
+
 from lox_token_type import LoxTokenType
 from lox_runtime_error import LoxRuntimeError
+from lox_function import LoxFunction
+from lox_return import LoxReturn
 from environment import Environment
 
 
 class Interpreter:
     def __init__(self):
-        self.environment = Environment()
+        self._globals = Environment()
+        self.environment = self._globals
+
+        class Clock:
+            def arity(self):
+                return 0
+
+            def call(self, interpreter, arguments):
+                return time_ns() // 1000_000
+
+            def to_string(self):
+                return "<native fn>"
+
+        self._globals.define("clock", Clock())
 
     def interpret(self, statements):
         try:
@@ -39,8 +56,13 @@ class Interpreter:
         self.evaluate(stmt.expression)
         return None
 
+    def visit_function_stmt(self, stmt):
+        function = LoxFunction(stmt, self.environment)
+        self.environment.define(stmt.name.lexeme, function)
+        return None
+
     def visit_if_stmt(self, stmt):
-        if self.is_truthy(self.evaluate(stmt.expression)):
+        if self.is_truthy(self.evaluate(stmt.condition)):
             self.execute(stmt.then_branch)
         elif stmt.else_branch is not None:
             self.execute(stmt.else_branch)
@@ -51,6 +73,14 @@ class Interpreter:
         value = self.evaluate(stmt.expression)
         print(self.stringify(value))
         return None
+
+    def visit_return_stmt(self, stmt):
+        value = None
+
+        if stmt.value is not None:
+            value = self.evaluate(stmt.value)
+
+        raise LoxReturn(value)
 
     def visit_var_stmt(self, stmt):
         value = None
@@ -140,6 +170,24 @@ class Interpreter:
             return not self.is_equal(left, right)
         elif expr.operator.ttype == LoxTokenType.EQUAL_EQUAL:
             return self.is_equal(left, right)
+
+    def visit_call_expr(self, expr):
+        callee = self.evaluate(expr.callee)
+
+        if not hasattr(callee, "call"):
+            raise LoxRuntimeError(expr.paren, "Can only call functions and classes.")
+
+        arguments = []
+        for argument in expr.arguments:
+            arguments.append(self.evaluate(argument))
+
+        if not len(arguments) == callee.arity():
+            raise LoxRuntimeError(
+                expr.paren,
+                f"Expected {callee.arity()} arguments but got {len(arguments)}.",
+            )
+
+        return callee.call(self, arguments)
 
     def is_truthy(self, value):
         if value is None:
