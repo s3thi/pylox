@@ -85,7 +85,7 @@ class Resolver:
         self.resolve_expr(expr.right)
 
     def visit_variable_expr(self, expr):
-        if len(self.scopes) == 0 and self.scopes[-1].get(expr.name.lexeme) is False:
+        if len(self.scopes) > 0 and self.scopes[-1].get(expr.name.lexeme) is False:
             from lox import Lox
 
             Lox.error(expr.name, "Can't read local variable in its own initializer.")
