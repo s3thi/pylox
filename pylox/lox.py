@@ -2,6 +2,7 @@ import sys
 from lox_scanner import LoxScanner
 from lox_parser import LoxParser
 from lox_token_type import LoxTokenType
+from resolver import Resolver
 from interpreter import Interpreter
 from ast_printer import ASTPrinter
 
@@ -51,6 +52,12 @@ class Lox:
         tokens = s.scan_tokens()
         parser = LoxParser(tokens)
         statements = parser.parse()
+
+        if cls.had_error:
+            return
+
+        resolver = Resolver(cls.interpreter)
+        resolver.resolve(statements)
 
         if cls.had_error:
             return

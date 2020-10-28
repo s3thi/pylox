@@ -10,6 +10,7 @@ from environment import Environment
 class Interpreter:
     def __init__(self):
         self._globals = Environment()
+        self._locals = {}
         self.environment = self._globals
 
         class Clock:
@@ -38,6 +39,9 @@ class Interpreter:
 
     def execute(self, stmt):
         stmt.accept(self)
+
+    def resolve(self, expr, depth):
+        self._locals[expr] = depth
 
     def execute_block(self, statements, environment):
         previous = self.environment
@@ -98,7 +102,13 @@ class Interpreter:
 
     def visit_assign_expr(self, expr):
         value = self.evaluate(expr.value)
-        self.environment.assign(expr.name, value)
+
+        distance = self._locals.get(expr)
+        if distance is not None:
+            self.environment.assign_at(distance, expr.name, value)
+        else:
+            self._globals.assign(expr.name, value)
+
         return value
 
     def visit_literal_expr(self, expr):
@@ -131,7 +141,15 @@ class Interpreter:
         return None
 
     def visit_variable_expr(self, expr):
-        return self.environment.get(expr.name)
+        return self.lookup_variable(expr.name, expr)
+
+    def lookup_variable(self, name, expr):
+        distance = self._locals.get(expr)
+
+        if distance is not None:
+            return self.environment.get_at(distance, name.lexeme)
+        else:
+            return self._globals.get(name)
 
     def visit_binary_expr(self, expr):
         left = self.evaluate(expr.left)

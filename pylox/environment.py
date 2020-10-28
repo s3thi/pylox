@@ -28,3 +28,17 @@ class Environment:
             return
 
         raise LoxRuntimeError(name, f"Undefined variable {name.lexeme}.")
+
+    def get_at(self, distance, name):
+        return self.ancestor(distance).values.get(name)
+
+    def assign_at(self, distance, name, value):
+        self.ancestor(distance).values[name.lexeme] = value
+
+    def ancestor(self, distance):
+        environment = self
+
+        for i in range(distance):
+            environment = environment.enclosing
+
+        return environment
