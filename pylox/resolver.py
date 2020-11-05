@@ -1,9 +1,8 @@
 from enum import Enum, auto
 
 
-class FunctionType(Enum):
-    NONE = auto()
-    FUNCTION = auto()
+FunctionType = Enum("FunctionType", "NONE FUNCTION METHOD INITIALIZER")
+ClassType = Enum("ClassType", "NONE CLASS")
 
 
 class Resolver:
@@ -11,11 +10,31 @@ class Resolver:
         self.interpreter = interpreter
         self.scopes = []
         self.current_function = FunctionType.NONE
+        self.current_class = ClassType.NONE
 
     def visit_block_stmt(self, stmt):
         self.begin_scope()
         self.resolve(stmt.statements)
         self.end_scope()
+
+    def visit_class_stmt(self, stmt):
+        enclosing_class = self.current_class
+        self.current_class = ClassType.CLASS
+
+        self.declare(stmt.name)
+        self.define(stmt.name)
+
+        self.begin_scope()
+        self.scopes[-1]["this"] = True
+
+        for method in stmt.methods:
+            declaration = FunctionType.METHOD
+            if method.name.lexeme == "init":
+                declaration = FunctionType.INITIALIZER
+            self.resolve_function(method, declaration)
+
+        self.end_scope()
+        self.current_class = enclosing_class
 
     def visit_expression_stmt(self, stmt):
         self.resolve_expr(stmt.expression)
@@ -43,6 +62,11 @@ class Resolver:
             Lox.error(stmt.keyword, "Can't return from toplevel code.")
 
         if stmt.value is not None:
+            if self.current_function == FunctionType.INITIALIZER:
+                from lox import Lox
+
+                Lox.error("Can't return a value from an initializer.")
+
             self.resolve_expr(stmt.value)
 
     def visit_var_stmt(self, stmt):
@@ -71,6 +95,9 @@ class Resolver:
         for argument in expr.arguments:
             self.resolve_expr(argument)
 
+    def visit_get_expr(self, expr):
+        self.resolve_expr(expr.objekt)
+
     def visit_grouping_expr(self, expr):
         self.resolve_expr(expr.expression)
 
@@ -80,6 +107,19 @@ class Resolver:
     def visit_logical_expr(self, expr):
         self.resolve_expr(expr.left)
         self.resolve_expr(expr.right)
+
+    def visit_set_expr(self, expr):
+        self.resolve_expr(expr.value)
+        self.resolve_expr(expr.objekt)
+
+    def visit_this_expr(self, expr):
+        if self.current_class == ClassType.NONE:
+            from lox import Lox
+
+            Lox.error(expr.keyword, "Can't use 'this' outside of a class.")
+            return None
+
+        self.resolve_local(expr, expr.keyword)
 
     def visit_unary_expr(self, expr):
         self.resolve_expr(expr.right)

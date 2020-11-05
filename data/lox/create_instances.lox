@@ -1,0 +1,29 @@
+class Bagel {
+  init(texture) {
+    this.texture = texture;
+  }
+  
+  eat() {
+    print "Chomp chomp mmm!";
+  }
+
+  getTexture() {
+    print "The texture is: " + this.texture;
+  }
+}
+
+// Create an instance and print its string
+// representation.
+var b = Bagel("crunchy");
+print b;
+
+// Set a random field on the instance and
+// confirm that it gets set.
+// b.texture = "soggy";
+// print b.texture;
+
+// Call a method on the instance.
+b.eat();
+
+// Call a method that uses "this".
+b.getTexture();

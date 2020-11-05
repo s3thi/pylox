@@ -4,12 +4,16 @@ from lox_ast import (
     AssignExpr,
     BinaryExpr,
     CallExpr,
+    GetExpr,
     UnaryExpr,
     GroupingExpr,
     LiteralExpr,
     LogicalExpr,
+    SetExpr,
+    ThisExpr,
     VariableExpr,
     BlockStmt,
+    ClassStmt,
     IfStmt,
     PrintStmt,
     ReturnStmt,
@@ -36,6 +40,8 @@ class LoxParser:
         try:
             if self.match(LoxTokenType.VAR):
                 return self.var_declaration()
+            elif self.match(LoxTokenType.CLASS):
+                return self.class_declaration()
             elif self.match(LoxTokenType.FUN):
                 return self.function("function")
 
@@ -43,6 +49,18 @@ class LoxParser:
         except LoxRuntimeError as error:
             self.synchronize()
             return None
+
+    def class_declaration(self):
+        name = self.consume(LoxTokenType.IDENTIFIER, "Expect class name.")
+        self.consume(LoxTokenType.LEFT_BRACE, "Expect '{' before class body.")
+
+        methods = []
+        while not self.check(LoxTokenType.RIGHT_BRACE) and not self.is_at_end():
+            methods.append(self.function("method"))
+
+        self.consume(LoxTokenType.RIGHT_BRACE, "Expect '}' after class body.")
+
+        return ClassStmt(name=name, methods=methods)
 
     def statement(self):
         if self.match(LoxTokenType.FOR):
@@ -195,6 +213,9 @@ class LoxParser:
             if isinstance(expr, VariableExpr):
                 name = expr.name
                 return AssignExpr(name=name, value=value)
+            elif isinstance(expr, GetExpr):
+                get = expr
+                return SetExpr(objekt=get.objekt, name=get.name, value=value)
 
             self.error(equals, "Invalid assignment target.")
 
@@ -279,6 +300,11 @@ class LoxParser:
         while True:
             if self.match(LoxTokenType.LEFT_PAREN):
                 expr = self.finish_call(expr)
+            elif self.match(LoxTokenType.DOT):
+                name = self.consume(
+                    LoxTokenType.IDENTIFIER, "Expect property name after '.'."
+                )
+                expr = GetExpr(objekt=expr, name=name)
             else:
                 break
 
@@ -311,6 +337,9 @@ class LoxParser:
 
         if self.match(LoxTokenType.NUMBER, LoxTokenType.STRING):
             return LiteralExpr(value=self.previous().literal)
+
+        if self.match(LoxTokenType.THIS):
+            return ThisExpr(keyword=self.previous())
 
         if self.match(LoxTokenType.IDENTIFIER):
             return VariableExpr(name=self.previous())
