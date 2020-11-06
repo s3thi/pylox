@@ -10,6 +10,7 @@ from lox_ast import (
     LiteralExpr,
     LogicalExpr,
     SetExpr,
+    SuperExpr,
     ThisExpr,
     VariableExpr,
     BlockStmt,
@@ -52,6 +53,12 @@ class LoxParser:
 
     def class_declaration(self):
         name = self.consume(LoxTokenType.IDENTIFIER, "Expect class name.")
+
+        superclass = None
+        if self.match(LoxTokenType.LESS):
+            self.consume(LoxTokenType.IDENTIFIER, "Expect superclass name.")
+            superclass = VariableExpr(name=self.previous())
+
         self.consume(LoxTokenType.LEFT_BRACE, "Expect '{' before class body.")
 
         methods = []
@@ -60,7 +67,7 @@ class LoxParser:
 
         self.consume(LoxTokenType.RIGHT_BRACE, "Expect '}' after class body.")
 
-        return ClassStmt(name=name, methods=methods)
+        return ClassStmt(name=name, superclass=superclass, methods=methods)
 
     def statement(self):
         if self.match(LoxTokenType.FOR):
@@ -337,6 +344,14 @@ class LoxParser:
 
         if self.match(LoxTokenType.NUMBER, LoxTokenType.STRING):
             return LiteralExpr(value=self.previous().literal)
+
+        if self.match(LoxTokenType.SUPER):
+            keyword = self.previous()
+            self.consume(LoxTokenType.DOT, "Expect '.' after 'super'.")
+            method = self.consume(
+                LoxTokenType.IDENTIFIER, "Expect superclass method name."
+            )
+            return SuperExpr(keyword=keyword, method=method)
 
         if self.match(LoxTokenType.THIS):
             return ThisExpr(keyword=self.previous())

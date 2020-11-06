@@ -51,6 +51,7 @@ define_ast(
         "Literal  : Object value",
         "Logical  : Expr left, Token operator, Expr right",
         "Set      : Expr objekt, Token name, Expr value",
+        "Super    : Token keyword, Token method",
         "This     : Token keyword",
         "Unary    : Token operator, Expr right",
         "Variable : Token name",
@@ -61,7 +62,7 @@ define_ast(
     "Stmt",
     [
         "Block      : List<Stmt> statements",
-        "Class      : Token name, List<FunctionStmt> methods",
+        "Class      : Token name, VariableExpr superclass, List<FunctionStmt> methods",
         "Expression : Expr expression",
         "Function   : Token name, List<Token> params, List<Stmt> body",
         "If         : Expr condition, Stmt then_branch, Stmt else_branch",

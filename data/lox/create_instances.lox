@@ -12,6 +12,8 @@ class Bagel {
   }
 }
 
+class BagelWithCreamCheese < Bagel { }
+
 // Create an instance and print its string
 // representation.
 var b = Bagel("crunchy");
@@ -27,3 +29,7 @@ b.eat();
 
 // Call a method that uses "this".
 b.getTexture();
+
+// Create an instance of a subclass.
+var bcc = BagelWithCreamCheese("gooey");
+bcc.getTexture();
